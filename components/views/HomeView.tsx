@@ -50,7 +50,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onTaskClick, onChangeView }) => {
             </div>
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">{greeting.text}, Gui Muniz.</h1>
-                <p className="text-gray-500 text-lg">Aqui está o resumo das suas demandas para hoje.</p>
+                <p className="text-gray-500 text-lg">Aqui está o resumo das suas tarefas para hoje.</p>
             </div>
         </div>
 
