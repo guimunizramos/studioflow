@@ -1,7 +1,9 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { Client, Project, Task, AppConfig, TaskStatus } from '../types';
 import { SEED_CLIENTS, SEED_PROJECTS, SEED_TASKS } from '../constants';
+import { getStorageAdapter, DatabaseSchema } from './storage';
+import { createEmptySchema, updateChecksum } from './storage/storage-utils';
 
 interface DataContextType {
   clients: Client[];
@@ -21,6 +23,8 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const storage = getStorageAdapter();
+  const [isLoading, setIsLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>(SEED_CLIENTS);
   const [projects, setProjects] = useState<Project[]>(SEED_PROJECTS);
   const [tasks, setTasks] = useState<Task[]>(SEED_TASKS);
@@ -37,6 +41,96 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       sidebarColor: '#111827'
     }
   });
+
+  // Ref para rastrear se é a primeira carga
+  const isInitialLoad = useRef(true);
+  // Ref para evitar salvamento durante carregamento inicial
+  const isSavingEnabled = useRef(false);
+
+  // Carrega dados do armazenamento na inicialização
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const savedData = await storage.load();
+        
+        if (savedData) {
+          // Usa dados salvos
+          setClients(savedData.clients);
+          setProjects(savedData.projects);
+          setTasks(savedData.tasks);
+          setConfig(savedData.config);
+        } else {
+          // Primeira execução - inicializa com dados padrão
+          const emptySchema = createEmptySchema();
+          const schemaWithMetadata: DatabaseSchema = await updateChecksum({
+            ...emptySchema,
+            metadata: {
+              lastSync: new Date().toISOString(),
+              lastBackup: '',
+              checksum: ''
+            }
+          });
+          await storage.save(schemaWithMetadata);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        // Em caso de erro, usa dados seed
+      } finally {
+        setIsLoading(false);
+        isSavingEnabled.current = true;
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Salva dados automaticamente quando há mudanças
+  useEffect(() => {
+    if (!isSavingEnabled.current || isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+
+    const saveData = async () => {
+      try {
+        const dataToSave: DatabaseSchema = await updateChecksum({
+          version: 1,
+          clients,
+          projects,
+          tasks,
+          config,
+          metadata: {
+            lastSync: new Date().toISOString(),
+            lastBackup: '',
+            checksum: ''
+          }
+        });
+        await storage.save(dataToSave);
+      } catch (error) {
+        console.error('Erro ao salvar dados:', error);
+      }
+    };
+
+    saveData();
+  }, [clients, projects, tasks, config]);
+
+  // Salva dados ao fechar aplicação
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (storage && typeof (storage as any).flush === 'function') {
+        try {
+          await (storage as any).flush();
+        } catch (error) {
+          console.error('Erro ao salvar dados ao fechar:', error);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   const updateTaskStatus = (taskId: string, newStatus: any) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
@@ -156,6 +250,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         alert('Agenda cheia ou sem tarefas pendentes adequadas para hoje.');
     }
   };
+
+  // Mostra loading durante carregamento inicial
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-gray-600">Carregando dados...</div>
+      </div>
+    );
+  }
 
   return (
     <DataContext.Provider value={{ 
