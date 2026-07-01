@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useMemo, useCallback } from 'react';
 import { Client, Project, Task, AppConfig, TaskStatus } from '../types';
 import { SEED_CLIENTS, SEED_PROJECTS, SEED_TASKS } from '../constants';
 import { getStorageAdapter, DatabaseSchema } from './storage';
@@ -132,36 +132,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const updateTaskStatus = (taskId: string, newStatus: any) => {
+  const updateTaskStatus = useCallback((taskId: string, newStatus: any) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-  };
+  }, []);
 
-  const updateTask = (updatedTask: Task) => {
+  const updateTask = useCallback((updatedTask: Task) => {
     setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-  };
+  }, []);
 
-  const addTask = (newTask: Task) => {
+  const addTask = useCallback((newTask: Task) => {
     setTasks(prev => [...prev, newTask]);
-  };
+  }, []);
 
-  const deleteTask = (taskId: string) => {
+  const deleteTask = useCallback((taskId: string) => {
     setTasks(prev => prev.filter(t => t.id !== taskId));
-  };
+  }, []);
 
-  const addClient = (client: Client) => {
+  const addClient = useCallback((client: Client) => {
     setClients(prev => [...prev, client]);
-  };
+  }, []);
 
-  const updateClient = (updatedClient: Client) => {
+  const updateClient = useCallback((updatedClient: Client) => {
     setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
-  };
+  }, []);
 
-  const updateConfig = (newConfig: Partial<AppConfig>) => {
+  const updateConfig = useCallback((newConfig: Partial<AppConfig>) => {
     setConfig(prev => ({ ...prev, ...newConfig }));
-  };
+  }, []);
 
   // Algoritmo de Agendamento que atualiza diretamente as Tarefas
-  const autoScheduleDay = (dateStr: string) => {
+  const autoScheduleDay = useCallback((dateStr: string) => {
     const globalStart = parseInt(config.workWindowStart.split(':')[0]);
     const globalEnd = parseInt(config.workWindowEnd.split(':')[0]);
     
@@ -249,7 +249,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
         alert('Agenda cheia ou sem tarefas pendentes adequadas para hoje.');
     }
-  };
+  }, [tasks, config]);
+
+  const value = useMemo(() => ({
+    clients, projects, tasks, config,
+    updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, updateConfig, autoScheduleDay
+  }), [clients, projects, tasks, config, updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, updateConfig, autoScheduleDay]);
 
   // Mostra loading durante carregamento inicial
   if (isLoading) {
@@ -261,10 +266,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   return (
-    <DataContext.Provider value={{ 
-      clients, projects, tasks, config, 
-      updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, updateConfig, autoScheduleDay 
-    }}>
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );

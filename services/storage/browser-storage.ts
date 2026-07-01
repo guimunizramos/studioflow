@@ -302,27 +302,34 @@ export class BrowserStorage implements StorageAdapter {
     cutoffDate.setDate(cutoffDate.getDate() - this.config.backupRetentionDays);
 
     const db = await this.openDB();
-    const transaction = db.transaction([BACKUP_STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(BACKUP_STORE_NAME);
 
-    // Remove backups antigos ou excedentes
-    let removed = 0;
-    for (let i = 0; i < backups.length; i++) {
-      const backup = backups[i];
-      const backupDate = new Date(backup.timestamp);
-      
-      if (
-        backupDate < cutoffDate || 
-        (i < backups.length - this.config.maxBackups)
-      ) {
-        store.delete(backup.id);
-        removed++;
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([BACKUP_STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(BACKUP_STORE_NAME);
+
+      // Remove backups antigos ou excedentes
+      let removed = 0;
+      for (let i = 0; i < backups.length; i++) {
+        const backup = backups[i];
+        const backupDate = new Date(backup.timestamp);
+
+        if (
+          backupDate < cutoffDate ||
+          (i < backups.length - this.config.maxBackups)
+        ) {
+          store.delete(backup.id);
+          removed++;
+        }
       }
-    }
 
-    if (removed > 0) {
-      console.log(`Removidos ${removed} backups antigos`);
-    }
+      transaction.oncomplete = () => {
+        if (removed > 0) {
+          console.log(`Removidos ${removed} backups antigos`);
+        }
+        resolve();
+      };
+      transaction.onerror = () => reject(transaction.error);
+    });
   }
 
   /**

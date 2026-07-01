@@ -19,7 +19,7 @@ const getPriorityColor = (priority: Priority) => {
   }
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, client, project, onClick }) => {
+const TaskCard: React.FC<TaskCardProps> = React.memo(({ task, client, project, onClick }) => {
   const formattedDate = new Date(task.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
   return (
@@ -74,6 +74,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, client, project, onClick }) =
       </div>
     </div>
   );
-};
+});
 
 export default TaskCard;

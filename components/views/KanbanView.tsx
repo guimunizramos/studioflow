@@ -26,6 +26,17 @@ const KanbanView: React.FC<KanbanViewProps> = ({ filterClientId, setFilterClient
     });
   }, [tasks, filterClientId, searchQuery, filterPriority]);
 
+  const tasksByColumn = useMemo(() => {
+    const grouped: Record<string, typeof filteredTasks> = {};
+    for (const task of filteredTasks) {
+      (grouped[task.status] ??= []).push(task);
+    }
+    return grouped;
+  }, [filteredTasks]);
+
+  const clientsById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
+  const projectsById = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
+
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId);
   };
@@ -115,24 +126,22 @@ const KanbanView: React.FC<KanbanViewProps> = ({ filterClientId, setFilterClient
               <div className="p-3 font-semibold text-gray-700 flex justify-between items-center border-b border-gray-200/50">
                 <span>{columnId}</span>
                 <span className="bg-gray-200 text-gray-600 text-xs py-0.5 px-2 rounded-full">
-                  {filteredTasks.filter(t => t.status === columnId).length}
+                  {(tasksByColumn[columnId] || []).length}
                 </span>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                {filteredTasks
-                  .filter(task => task.status === columnId)
-                  .map(task => (
-                    <div 
-                      key={task.id} 
-                      draggable 
+                {(tasksByColumn[columnId] || []).map(task => (
+                    <div
+                      key={task.id}
+                      draggable
                       onDragStart={(e) => handleDragStart(e, task.id)}
                       className="cursor-move"
                     >
-                      <TaskCard 
-                        task={task} 
-                        client={clients.find(c => c.id === task.clientId)}
-                        project={projects.find(p => p.id === task.projectId)}
+                      <TaskCard
+                        task={task}
+                        client={clientsById.get(task.clientId)}
+                        project={projectsById.get(task.projectId)}
                         onClick={() => onTaskClick && onTaskClick(task)}
                       />
                     </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useData } from '../../services/dataContext';
 import { TaskStatus, Priority, Task } from '../../types';
 import { Calendar, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -19,11 +19,6 @@ const ListView: React.FC<ListViewProps> = ({ onTaskClick }) => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
   };
 
-  const upcomingTasks = tasks.filter(task => {
-    const diff = getDaysDiff(task.deadline);
-    return diff <= 7 && task.status !== TaskStatus.COMPLETED;
-  });
-
   const priorityWeight = {
     [Priority.URGENT]: 4,
     [Priority.HIGH]: 3,
@@ -31,12 +26,22 @@ const ListView: React.FC<ListViewProps> = ({ onTaskClick }) => {
     [Priority.LOW]: 1
   };
 
-  upcomingTasks.sort((a, b) => {
-    const pA = priorityWeight[a.priority];
-    const pB = priorityWeight[b.priority];
-    if (pA !== pB) return pB - pA;
-    return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-  });
+  const upcomingTasks = useMemo(() => {
+    return tasks
+      .filter(task => {
+        const diff = getDaysDiff(task.deadline);
+        return diff <= 7 && task.status !== TaskStatus.COMPLETED;
+      })
+      .sort((a, b) => {
+        const pA = priorityWeight[a.priority];
+        const pB = priorityWeight[b.priority];
+        if (pA !== pB) return pB - pA;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      });
+  }, [tasks]);
+
+  const clientsById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
+  const projectsById = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
   const getDayLabel = (diff: number) => {
     if (diff < 0) return 'Atrasado';
@@ -69,8 +74,8 @@ const ListView: React.FC<ListViewProps> = ({ onTaskClick }) => {
           ) : (
             <div className="divide-y divide-gray-100">
               {upcomingTasks.map(task => {
-                const client = clients.find(c => c.id === task.clientId);
-                const project = projects.find(p => p.id === task.projectId);
+                const client = clientsById.get(task.clientId);
+                const project = projectsById.get(task.projectId);
                 const diff = getDaysDiff(task.deadline);
                 const dayLabel = getDayLabel(diff);
 

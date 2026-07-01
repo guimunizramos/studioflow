@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useData } from '../../services/dataContext';
 import { Task, AgendaViewMode, TaskStatus, Priority } from '../../types';
 import { ChevronLeft, ChevronRight, Wand2, Calendar as CalendarIcon, Clock, CheckCircle2, GripHorizontal, AlertCircle } from 'lucide-react';
@@ -22,8 +22,8 @@ const AgendaTaskCard: React.FC<{
   onResizeStart?: (e: React.MouseEvent) => void;
   onDragStart: (e: React.DragEvent) => void;
   onClick: () => void;
-}> = ({ task, clientColor, clientName, isCompleted, height, onToggleComplete, onResizeStart, onDragStart, onClick }) => {
-  
+}> = React.memo(({ task, clientColor, clientName, isCompleted, height, onToggleComplete, onResizeStart, onDragStart, onClick }) => {
+
   const baseStyle = isCompleted
     ? 'bg-white/80 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)] opacity-70'
     : 'bg-white border-transparent hover:shadow-md';
@@ -78,7 +78,7 @@ const AgendaTaskCard: React.FC<{
       )}
     </div>
   );
-};
+});
 
 // --- Main Component ---
 
@@ -129,6 +129,18 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
     return dates;
   }, [currentDate, viewMode]);
 
+  const clientsById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
+
+  const tasksByDate = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    for (const task of tasks) {
+      const arr = map.get(task.deadline);
+      if (arr) arr.push(task);
+      else map.set(task.deadline, [task]);
+    }
+    return map;
+  }, [tasks]);
+
   // --- Logic ---
 
   const navigate = (direction: 'prev' | 'next') => {
@@ -177,6 +189,12 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
     });
   };
 
+  // Refs to avoid tearing down/re-attaching listeners when tasks/updateTask change mid-drag
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
+  const updateTaskRef = useRef(updateTask);
+  updateTaskRef.current = updateTask;
+
   // Global Resize Listener
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -195,10 +213,10 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
       const diff = e.clientY - resizingTask.startY;
       const hourSteps = Math.round(diff / CELL_HEIGHT);
       const newDuration = Math.max(1, resizingTask.startDuration + hourSteps);
-      
-      const task = tasks.find(t => t.id === resizingTask.id);
+
+      const task = tasksRef.current.find(t => t.id === resizingTask.id);
       if (task && newDuration !== task.estimatedHours) {
-        updateTask({ ...task, estimatedHours: newDuration });
+        updateTaskRef.current({ ...task, estimatedHours: newDuration });
       }
       setResizingTask(null);
     };
@@ -211,7 +229,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizingTask, tasks, updateTask]);
+  }, [resizingTask]);
 
   // --- Renderers ---
 
@@ -224,7 +242,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
            ))}
            {getDatesInView.map((date, i) => {
              const dateStr = getLocalISODate(date);
-             const dayTasks = tasks.filter(t => t.deadline === dateStr);
+             const dayTasks = tasksByDate.get(dateStr) || [];
              const isCurrentMonth = date.getMonth() === currentDate.getMonth();
              const isToday = dateStr === getLocalISODate(new Date());
 
@@ -240,7 +258,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
                  </div>
                  <div className="flex-1 flex flex-col gap-1 overflow-hidden">
                    {dayTasks.map(task => {
-                     const client = clients.find(c => c.id === task.clientId);
+                     const client = clientsById.get(task.clientId);
                      return (
                         <div 
                           key={task.id}
@@ -310,8 +328,8 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
                 <div className="flex-1 flex">
                     {getDatesInView.map(date => {
                         const dateStr = getLocalISODate(date);
-                        const dayTasks = tasks.filter(t => t.deadline === dateStr);
-                        
+                        const dayTasks = tasksByDate.get(dateStr) || [];
+
                         // Separate scheduled vs unscheduled
                         const unscheduledTasks = dayTasks.filter(t => !t.startTime);
                         
@@ -328,7 +346,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
                                         <div className="text-[10px] text-gray-300 text-center mt-2 italic">Arraste aqui para remover horário</div>
                                     )}
                                     {unscheduledTasks.map(task => {
-                                         const client = clients.find(c => c.id === task.clientId);
+                                         const client = clientsById.get(task.clientId);
                                          return (
                                              <AgendaTaskCard 
                                                 key={task.id}
@@ -360,7 +378,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
                                      {/* Scheduled Tasks (Absolute Positioning) */}
                                      {dayTasks.filter(t => t.startTime).map(task => {
                                          if(!task.startTime) return null;
-                                         const client = clients.find(c => c.id === task.clientId);
+                                         const client = clientsById.get(task.clientId);
                                          const hour = parseInt(task.startTime.split(':')[0]);
                                          
                                          // Calculate position relative to start hour

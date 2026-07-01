@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useData } from '../../services/dataContext';
 import { TaskStatus, Priority } from '../../types';
 import { Clock, AlertCircle, Calendar, CheckCircle2, ArrowRight, Sun, Moon, Sunrise } from 'lucide-react';
@@ -30,14 +30,28 @@ const HomeView: React.FC<HomeViewProps> = ({ onTaskClick, onChangeView }) => {
   const todayStr = getLocalISODate(new Date());
 
   // Métricas
-  const todayTasks = tasks.filter(t => t.deadline === todayStr && t.status !== TaskStatus.COMPLETED);
-  const completedToday = tasks.filter(t => t.deadline === todayStr && t.status === TaskStatus.COMPLETED);
-  const urgentTasks = tasks.filter(t => t.priority === Priority.URGENT && t.status !== TaskStatus.COMPLETED);
-  
+  const todayTasks = useMemo(
+    () => tasks.filter(t => t.deadline === todayStr && t.status !== TaskStatus.COMPLETED),
+    [tasks, todayStr]
+  );
+  const completedToday = useMemo(
+    () => tasks.filter(t => t.deadline === todayStr && t.status === TaskStatus.COMPLETED),
+    [tasks, todayStr]
+  );
+  const urgentTasks = useMemo(
+    () => tasks.filter(t => t.priority === Priority.URGENT && t.status !== TaskStatus.COMPLETED),
+    [tasks]
+  );
+
   // Próximas tarefas (com horário definido para hoje)
-  const upcomingSchedule = todayTasks
-    .filter(t => t.startTime)
-    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+  const upcomingSchedule = useMemo(
+    () => todayTasks
+      .filter(t => t.startTime)
+      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')),
+    [todayTasks]
+  );
+
+  const clientsById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
 
   return (
     <div className="p-8 bg-gray-50 h-full overflow-y-auto">
@@ -134,7 +148,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onTaskClick, onChangeView }) => {
                         </div>
                     ) : (
                         upcomingSchedule.slice(0, 4).map(task => {
-                            const client = clients.find(c => c.id === task.clientId);
+                            const client = clientsById.get(task.clientId);
                             return (
                                 <div 
                                     key={task.id} 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useData } from '../../services/dataContext';
 import { TaskStatus } from '../../types';
 import { PieChart, BarChart3, TrendingUp, Calendar } from 'lucide-react';
@@ -8,7 +8,7 @@ const ReportsView: React.FC = () => {
   const [period, setPeriod] = useState<'week' | 'month'>('month');
 
   // Helper para verificar se data está no período
-  const isDateInPeriod = (dateStr: string) => {
+  const isDateInPeriod = useCallback((dateStr: string) => {
     const date = new Date(dateStr);
     // Zerar horas para comparação apenas de data
     date.setHours(0,0,0,0);
@@ -30,18 +30,18 @@ const ReportsView: React.FC = () => {
 
         return date >= startOfWeek && date <= endOfWeek;
     }
-  };
+  }, [period]);
 
   // Calculate totals based on period
-  const clientStats = clients.map(client => {
+  const clientStats = useMemo(() => clients.map(client => {
     // Filtrar tarefas que pertencem a este período (baseado no Prazo)
     const periodTasks = tasks.filter(t => t.clientId === client.id && isDateInPeriod(t.deadline));
-    
+
     const completedTasks = periodTasks.filter(t => t.status === TaskStatus.COMPLETED);
-    
+
     // Soma horas estimadas das tarefas concluídas neste período
     const executedHours = completedTasks.reduce((acc, task) => acc + task.estimatedHours, 0);
-    
+
     const totalPending = periodTasks.filter(t => t.status !== TaskStatus.COMPLETED).length;
 
     // Cálculo de horas contratadas
@@ -55,7 +55,7 @@ const ReportsView: React.FC = () => {
         contractedHours,
         pendingTasks: totalPending
     };
-  });
+  }), [clients, tasks, period, isDateInPeriod]);
 
   const totalExecuted = clientStats.reduce((acc, curr) => acc + curr.executedHours, 0);
   const totalCompleted = clientStats.reduce((acc, curr) => acc + curr.completedTasks, 0);
@@ -142,10 +142,10 @@ const ReportsView: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {clientStats.map((stat, index) => {
+                        {clientStats.map((stat) => {
                             const percentage = stat.contractedHours > 0 ? (stat.executedHours / stat.contractedHours) * 100 : 0;
                             return (
-                                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                <tr key={stat.client.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-2">
                                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stat.client.color }}></div>
                                         <span>{stat.client.name}</span>

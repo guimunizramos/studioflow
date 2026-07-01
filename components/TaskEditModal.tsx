@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../services/dataContext';
 import { Task, Priority, TaskStatus, TaskType } from '../types';
 import { X, Trash2, Save } from 'lucide-react';
@@ -18,14 +18,13 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose }) => {
     setEditedTask({ ...task });
   }, [task]);
 
+  const isNew = useMemo(() => !tasks.some(t => t.id === task.id), [tasks, task.id]);
+
   const handleSave = () => {
-    // Check if task exists in the list
-    const exists = tasks.some(t => t.id === editedTask.id);
-    
-    if (exists) {
-        updateTask(editedTask);
-    } else {
+    if (isNew) {
         addTask(editedTask);
+    } else {
+        updateTask(editedTask);
     }
     onClose();
   };
@@ -36,8 +35,6 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose }) => {
         onClose();
     }
   };
-
-  const isNew = !tasks.some(t => t.id === task.id);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
