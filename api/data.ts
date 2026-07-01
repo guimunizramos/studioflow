@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loadSchema, saveSchema, clearAll } from './_lib/db';
+import { loadSchema, saveSchema, clearAll } from './_lib/db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

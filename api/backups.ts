@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createBackup, listBackups, restoreBackup } from './_lib/db';
+import { createBackup, listBackups, restoreBackup } from './_lib/db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
