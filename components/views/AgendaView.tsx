@@ -23,8 +23,8 @@ const AgendaTaskCard: React.FC<{
 }> = React.memo(({ task, clientColor, clientName, isCompleted, height, onToggleComplete, onResizeStart, onDragStart, onClick }) => {
 
   const baseStyle = isCompleted
-    ? 'bg-white/80 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)] opacity-70'
-    : 'bg-white border-transparent hover:shadow-md';
+    ? 'bg-white/80 dark:bg-gray-800/80 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)] opacity-70'
+    : 'bg-white dark:bg-gray-800 border-transparent hover:shadow-md';
 
   const borderStyle = isCompleted 
     ? { borderColor: '#22c55e', borderWidth: '2px' } 
@@ -35,7 +35,7 @@ const AgendaTaskCard: React.FC<{
       draggable
       onDragStart={onDragStart}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`relative rounded-lg p-2 text-xs cursor-move group transition-all border border-gray-200 overflow-hidden ${baseStyle}`}
+      className={`relative rounded-lg p-2 text-xs cursor-move group transition-all border border-gray-200 dark:border-gray-700 overflow-hidden ${baseStyle}`}
       style={{
         height: height ? `${height}px` : 'auto',
         minHeight: height ? undefined : '60px', // For unscheduled or month view
@@ -43,13 +43,13 @@ const AgendaTaskCard: React.FC<{
       }}
     >
       <div className="flex justify-between items-start mb-1">
-        <span className={`font-bold truncate mr-1 ${isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+        <span className={`font-bold truncate mr-1 ${isCompleted ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
           {task.startTime || ''}
         </span>
         <button
           onClick={onToggleComplete}
           className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors z-20 ${
-            isCompleted ? 'bg-green-500 text-white' : 'bg-white hover:bg-green-100 text-gray-300 border border-gray-200'
+            isCompleted ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-950 text-gray-300 dark:text-gray-600 border border-gray-200 dark:border-gray-700'
           }`}
         >
           <CheckCircle2 size={14} />
@@ -57,10 +57,10 @@ const AgendaTaskCard: React.FC<{
       </div>
 
       <div className="pr-4">
-        <p className={`font-semibold truncate leading-tight mb-0.5 ${isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+        <p className={`font-semibold truncate leading-tight mb-0.5 ${isCompleted ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
           {clientName}
         </p>
-        <p className={`truncate text-[10px] ${isCompleted ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+        <p className={`truncate text-[10px] ${isCompleted ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-600 dark:text-gray-400'}`}>
           {task.title}
         </p>
       </div>
@@ -68,7 +68,7 @@ const AgendaTaskCard: React.FC<{
       {/* Resize Handle (Only for timed tasks) */}
       {onResizeStart && (
         <div
-          className="absolute bottom-0 left-0 w-full h-3 cursor-ns-resize flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/5 transition-opacity z-10"
+          className="absolute bottom-0 left-0 w-full h-3 cursor-ns-resize flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-opacity z-10"
           onMouseDown={(e) => { e.stopPropagation(); onResizeStart(e); }}
         >
           <GripHorizontal size={12} className="text-gray-400" />
@@ -247,10 +247,10 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
 
   const renderMonthView = () => {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-200 p-1">
+      <div className="flex-1 overflow-y-auto bg-gray-200 dark:bg-gray-800 p-1">
         <div className="grid grid-cols-7 gap-1 min-h-full">
            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map(d => (
-             <div key={d} className="p-2 text-center font-bold text-gray-500 bg-gray-50">{d}</div>
+             <div key={d} className="p-2 text-center font-bold text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-900">{d}</div>
            ))}
            {getDatesInView.map((date, i) => {
              const dateStr = getLocalISODate(date);
@@ -259,20 +259,20 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
              const isToday = dateStr === getLocalISODate(new Date());
 
              return (
-               <div 
-                  key={i} 
+               <div
+                  key={i}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => handleDrop(e, date)}
-                  className={`bg-white min-h-[120px] p-2 flex flex-col gap-1 hover:bg-gray-50 transition-colors ${!isCurrentMonth ? 'opacity-50' : ''}`}
+                  className={`bg-white dark:bg-gray-900 min-h-[120px] p-2 flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${!isCurrentMonth ? 'opacity-50' : ''}`}
                 >
-                 <div className={`text-right text-sm font-bold mb-1 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+                 <div className={`text-right text-sm font-bold mb-1 ${isToday ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>
                    {date.getDate()}
                  </div>
                  <div className="flex-1 flex flex-col gap-1 overflow-hidden">
                    {dayTasks.map(task => {
                      const client = clientsById.get(task.clientId);
                      return (
-                        <div 
+                        <div
                           key={task.id}
                           draggable
                           onDragStart={(e) => e.dataTransfer.setData('taskId', task.id)}
@@ -282,7 +282,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
                         />
                      );
                    })}
-                   <div className="text-xs text-gray-400 mt-auto pt-1 text-center">
+                   <div className="text-xs text-gray-400 dark:text-gray-600 mt-auto pt-1 text-center">
                       {dayTasks.length} tarefas
                    </div>
                  </div>
@@ -296,21 +296,21 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
 
   const renderTimelineView = () => {
     return (
-      <div className="flex-1 flex flex-col overflow-hidden bg-white">
-        
+      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+
         {/* Header Dates */}
-        <div className="flex border-b border-gray-200 bg-gray-50">
-          <div className="w-16 shrink-0 border-r border-gray-200 bg-white"></div> {/* Time Column Spacer */}
+        <div className="flex border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+          <div className="w-16 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"></div> {/* Time Column Spacer */}
           <div className="flex-1 flex overflow-x-auto hide-scrollbar">
              {getDatesInView.map(date => {
                const dateStr = getLocalISODate(date);
                const isToday = dateStr === getLocalISODate(new Date());
                return (
-                 <div key={dateStr} className={`flex-1 min-w-[160px] p-2 text-center border-r border-gray-200 ${isToday ? 'bg-blue-50' : ''}`}>
-                    <div className="text-xs font-bold text-gray-500 uppercase mb-1">
+                 <div key={dateStr} className={`flex-1 min-w-[160px] p-2 text-center border-r border-gray-200 dark:border-gray-800 ${isToday ? 'bg-gray-100 dark:bg-gray-700' : ''}`}>
+                    <div className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase mb-1">
                       {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
                     </div>
-                    <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}`}>
+                    <div className={`text-lg font-bold ${isToday ? 'text-black dark:text-white' : 'text-gray-800 dark:text-gray-200'}`}>
                       {date.getDate()}
                     </div>
                  </div>
@@ -322,15 +322,15 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
         {/* Scrollable Grid */}
         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
             <div className="flex min-h-full">
-                
+
                 {/* Time Labels Column */}
-                <div className="w-16 shrink-0 border-r border-gray-200 bg-white sticky left-0 z-30">
+                <div className="w-16 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky left-0 z-30">
                     {/* Unscheduled Row Label */}
-                    <div className="h-auto min-h-[60px] border-b border-gray-200 p-2 text-xs text-center text-gray-400 flex items-center justify-center bg-gray-50/50 font-medium">
+                    <div className="h-auto min-h-[60px] border-b border-gray-200 dark:border-gray-800 p-2 text-xs text-center text-gray-400 dark:text-gray-600 flex items-center justify-center bg-gray-50/50 dark:bg-gray-800/50 font-medium">
                        Sem Horário
                     </div>
                     {HOURS.map(h => (
-                        <div key={h} className="border-b border-gray-100 text-xs text-gray-400 flex items-center justify-center" style={{ height: `${CELL_HEIGHT}px` }}>
+                        <div key={h} className="border-b border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-600 flex items-center justify-center" style={{ height: `${CELL_HEIGHT}px` }}>
                             {h.toString().padStart(2, '0')}:00
                         </div>
                     ))}
@@ -344,18 +344,18 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
 
                         // Separate scheduled vs unscheduled
                         const unscheduledTasks = dayTasks.filter(t => !t.startTime);
-                        
+
                         return (
-                            <div key={dateStr} className="flex-1 min-w-[160px] border-r border-gray-200 flex flex-col relative bg-white">
-                                
+                            <div key={dateStr} className="flex-1 min-w-[160px] border-r border-gray-200 dark:border-gray-800 flex flex-col relative bg-white dark:bg-gray-900">
+
                                 {/* Unscheduled Drop Zone */}
-                                <div 
+                                <div
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => handleDrop(e, date, undefined)} // Undefined hour = remove time
-                                    className="min-h-[60px] border-b-4 border-double border-gray-200 bg-gray-50/30 p-1 gap-1 flex flex-col transition-colors hover:bg-gray-100/50"
+                                    className="min-h-[60px] border-b-4 border-double border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/30 p-1 gap-1 flex flex-col transition-colors hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
                                 >
                                     {unscheduledTasks.length === 0 && (
-                                        <div className="text-[10px] text-gray-300 text-center mt-2 italic">Arraste aqui para remover horário</div>
+                                        <div className="text-[10px] text-gray-300 dark:text-gray-700 text-center mt-2 italic">Arraste aqui para remover horário</div>
                                     )}
                                     {unscheduledTasks.map(task => {
                                          const client = clientsById.get(task.clientId);
@@ -404,7 +404,7 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
                                                 key={h}
                                                 onDragOver={(e) => { if (!blocked) e.preventDefault(); }}
                                                 onDrop={(e) => { if (!blocked) handleDrop(e, date, h); }}
-                                                className={`border-b border-gray-100 box-border transition-colors ${blocked ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-blue-50/30'}`}
+                                                className={`border-b border-gray-100 dark:border-gray-800 box-border transition-colors ${blocked ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
                                                 style={{ height: `${CELL_HEIGHT}px` }}
                                              />
                                          );
@@ -460,51 +460,51 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
       {/* Toolbar */}
-      <div className="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <CalendarIcon size={20} className="text-blue-600" />
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <CalendarIcon size={20} className="text-gray-700 dark:text-gray-300" />
             Agenda
           </h2>
-          <p className="text-sm text-gray-500">Visão completa de todas as tarefas.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-500">Visão completa de todas as tarefas.</p>
         </div>
 
         <div className="flex items-center gap-3">
            {scheduleResult && (
-             <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-green-50 text-green-700">
+             <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400">
                {scheduleResult}
              </span>
            )}
            <button
              onClick={handleAutoSchedule}
-             className="flex items-center gap-2 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium transition-colors"
+             className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-medium transition-colors"
            >
              <Wand2 size={16} />
              <span>Organizar Hoje</span>
            </button>
 
-           <div className="flex bg-gray-100 rounded-lg p-1">
+           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               {[AgendaViewMode.WEEK, AgendaViewMode.FORTNIGHT, AgendaViewMode.MONTH].map(mode => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === mode ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === mode ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-gray-50' : 'text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300'}`}
                 >
                   {mode}
                 </button>
               ))}
            </div>
 
-           <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-              <button onClick={() => navigate('prev')} className="p-1 hover:bg-gray-100 rounded text-gray-600">
+           <div className="flex items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-1 shadow-sm">
+              <button onClick={() => navigate('prev')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400">
                 <ChevronLeft size={20} />
               </button>
-              <span className="text-sm font-medium w-32 text-center text-gray-700">
+              <span className="text-sm font-medium w-32 text-center text-gray-700 dark:text-gray-300">
                  {currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
               </span>
-              <button onClick={() => navigate('next')} className="p-1 hover:bg-gray-100 rounded text-gray-600">
+              <button onClick={() => navigate('next')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400">
                 <ChevronRight size={20} />
               </button>
            </div>

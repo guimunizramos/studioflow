@@ -45,9 +45,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     breaks: [],
     visual: {
       themeMode: 'light',
-      primaryColor: '#2563eb',
-      density: 'comfortable',
-      sidebarColor: '#111827'
+      density: 'comfortable'
     }
   });
 

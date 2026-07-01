@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Layout, Users, Calendar, CheckSquare, Settings, Briefcase, Palette, BarChart3, Home } from 'lucide-react';
-import { useData } from '../services/dataContext';
 
 interface SidebarProps {
   currentView: string;
@@ -9,9 +8,6 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
-  const { config } = useData();
-  const { visual } = config;
-
   const navItems = [
     { id: 'home', label: 'Home', icon: <Home size={20} /> },
     { id: 'agenda', label: 'Agenda', icon: <Calendar size={20} /> },
@@ -27,12 +23,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   ];
 
   return (
-    <div className={`w-64 text-gray-300 flex flex-col h-full border-r border-gray-800 transition-colors duration-300`} style={{ backgroundColor: visual.sidebarColor }}>
+    <div className="w-64 bg-black text-gray-300 flex flex-col h-full border-r border-gray-800">
       <div className="p-6 border-b border-white/10 flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: visual.primaryColor }}>S</div>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white text-black font-bold">S</div>
         <span className="text-xl font-bold text-white tracking-tight">StudioFlow</span>
       </div>
-      
+
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => (
           <button
@@ -40,10 +36,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
             onClick={() => onViewChange(item.id)}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
               currentView === item.id
-                ? 'text-white'
+                ? 'bg-white text-black'
                 : 'hover:bg-white/10 hover:text-white'
             }`}
-            style={currentView === item.id ? { backgroundColor: visual.primaryColor } : {}}
           >
             {item.icon}
             <span className="font-medium">{item.label}</span>
@@ -58,10 +53,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
                 onClick={() => onViewChange(item.id)}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === item.id
-                    ? 'text-white'
+                    ? 'bg-white text-black'
                     : 'hover:bg-white/10 hover:text-white'
                 }`}
-                style={currentView === item.id ? { backgroundColor: visual.primaryColor } : {}}
             >
                 {item.icon}
                 <span className="font-medium">{item.label}</span>

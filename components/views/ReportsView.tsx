@@ -4,7 +4,7 @@ import { TaskStatus } from '../../types';
 import { PieChart, BarChart3, TrendingUp, Calendar } from 'lucide-react';
 
 const ReportsView: React.FC = () => {
-  const { clients, tasks, config } = useData();
+  const { clients, tasks } = useData();
   const [period, setPeriod] = useState<'week' | 'month'>('month');
 
   // Helper para verificar se data está no período
@@ -62,28 +62,26 @@ const ReportsView: React.FC = () => {
   const totalPendingGlobal = clientStats.reduce((acc, curr) => acc + curr.pendingTasks, 0);
 
   return (
-    <div className="p-6 bg-gray-50 h-full overflow-y-auto">
+    <div className="p-6 bg-[#f2f2f3] dark:bg-black h-full overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900">Relatórios de Desempenho</h2>
-                <p className="text-gray-500">Acompanhamento de horas e entregas por cliente.</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Relatórios de Desempenho</h2>
+                <p className="text-gray-500 dark:text-gray-500">Acompanhamento de horas e entregas por cliente.</p>
             </div>
 
             {/* Toggle Period */}
-            <div className="bg-white p-1 rounded-lg border border-gray-200 flex shadow-sm">
-                <button 
+            <div className="bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-200 dark:border-gray-800 flex shadow-sm">
+                <button
                     onClick={() => setPeriod('week')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${period === 'week' ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
-                    style={period === 'week' ? { backgroundColor: config.visual.primaryColor } : {}}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${period === 'week' ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'}`}
                 >
                     <Calendar size={16} />
                     <span>Esta Semana</span>
                 </button>
-                <button 
+                <button
                     onClick={() => setPeriod('month')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${period === 'month' ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
-                    style={period === 'month' ? { backgroundColor: config.visual.primaryColor } : {}}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${period === 'month' ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'}`}
                 >
                     <Calendar size={16} />
                     <span>Este Mês</span>
@@ -93,46 +91,46 @@ const ReportsView: React.FC = () => {
 
         {/* Cards Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800">
                 <div className="flex items-center space-x-3 mb-2">
-                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><TrendingUp size={20} /></div>
-                    <span className="text-sm font-medium text-gray-500">Horas Executadas ({period === 'week' ? 'Semana' : 'Mês'})</span>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300"><TrendingUp size={20} /></div>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-500">Horas Executadas ({period === 'week' ? 'Semana' : 'Mês'})</span>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-50">
                     {totalExecuted}h
                 </p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800">
                 <div className="flex items-center space-x-3 mb-2">
-                    <div className="p-2 bg-green-50 rounded-lg text-green-600"><BarChart3 size={20} /></div>
-                    <span className="text-sm font-medium text-gray-500">Tarefas Concluídas</span>
+                    <div className="p-2 bg-green-50 dark:bg-green-950/40 rounded-lg text-green-600 dark:text-green-400"><BarChart3 size={20} /></div>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-500">Tarefas Concluídas</span>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-50">
                     {totalCompleted}
                 </p>
             </div>
-             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+             <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800">
                 <div className="flex items-center space-x-3 mb-2">
-                    <div className="p-2 bg-orange-50 rounded-lg text-orange-600"><PieChart size={20} /></div>
-                    <span className="text-sm font-medium text-gray-500">Pendentes no Período</span>
+                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300"><PieChart size={20} /></div>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-500">Pendentes no Período</span>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-50">
                     {totalPendingGlobal}
                 </p>
             </div>
         </div>
 
         {/* Tabela */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800">Detalhamento por Cliente</h3>
-                <span className="text-xs font-medium px-2 py-1 bg-white border border-gray-200 rounded text-gray-500 uppercase">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex justify-between items-center">
+                <h3 className="font-semibold text-gray-800 dark:text-gray-200">Detalhamento por Cliente</h3>
+                <span className="text-xs font-medium px-2 py-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-gray-500 dark:text-gray-400 uppercase">
                     {period === 'week' ? 'Visão Semanal' : 'Visão Mensal'}
                 </span>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+                    <thead className="text-xs text-gray-500 dark:text-gray-500 uppercase bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th className="px-6 py-3 font-medium">Cliente</th>
                             <th className="px-6 py-3 font-medium">Horas Contratadas</th>
@@ -141,30 +139,30 @@ const ReportsView: React.FC = () => {
                             <th className="px-6 py-3 font-medium">Entregas</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                         {clientStats.map((stat) => {
                             const percentage = stat.contractedHours > 0 ? (stat.executedHours / stat.contractedHours) * 100 : 0;
                             return (
-                                <tr key={stat.client.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-2">
+                                <tr key={stat.client.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100 flex items-center space-x-2">
                                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stat.client.color }}></div>
                                         <span>{stat.client.name}</span>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-500">{stat.contractedHours}h</td>
-                                    <td className="px-6 py-4 text-gray-900 font-semibold">{stat.executedHours}h</td>
+                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-500">{stat.contractedHours}h</td>
+                                    <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-semibold">{stat.executedHours}h</td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center space-x-2">
-                                            <div className="w-24 bg-gray-200 rounded-full h-2">
-                                                <div 
-                                                    className={`h-2 rounded-full ${percentage > 100 ? 'bg-red-500' : 'bg-blue-500'}`}
+                                            <div className="w-24 bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
+                                                <div
+                                                    className={`h-1.5 rounded-full ${percentage > 100 ? 'bg-red-500' : 'bg-black dark:bg-white'}`}
                                                     style={{ width: `${Math.min(percentage, 100)}%` }}
                                                 ></div>
                                             </div>
-                                            <span className="text-xs text-gray-500">{percentage.toFixed(0)}%</span>
+                                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{percentage.toFixed(0)}%</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-500">
-                                        {stat.completedTasks} <span className="text-gray-300">/</span> {stat.totalTasks}
+                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-500">
+                                        {stat.completedTasks} <span className="text-gray-300 dark:text-gray-700">/</span> {stat.totalTasks}
                                     </td>
                                 </tr>
                             );
@@ -173,7 +171,7 @@ const ReportsView: React.FC = () => {
                 </table>
             </div>
             {clientStats.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-gray-500 dark:text-gray-500">
                     Nenhum dado encontrado para este período.
                 </div>
             )}

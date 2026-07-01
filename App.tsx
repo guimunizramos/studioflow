@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataProvider, useData } from './services/dataContext';
 import Sidebar from './components/Sidebar';
 import KanbanView from './components/views/KanbanView';
@@ -19,6 +19,10 @@ const DashboardContent: React.FC = () => {
   const [filterClientId, setFilterClientId] = useState<string | undefined>(undefined);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const { config } = useData();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', config.visual.themeMode === 'dark');
+  }, [config.visual.themeMode]);
 
   const handleViewChange = (viewId: string) => {
     setCurrentView(viewId);
@@ -71,16 +75,15 @@ const DashboardContent: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#f2f2f3] dark:bg-black overflow-hidden font-sans">
       <Sidebar currentView={currentView} onViewChange={handleViewChange} />
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
         {renderContent()}
-        
+
         {/* FAB - New Task Button */}
-        <button 
+        <button
             onClick={handleCreateTask}
-            className="fixed bottom-8 right-8 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
-            style={{ backgroundColor: config.visual.primaryColor }}
+            className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-black text-white dark:bg-white dark:text-black shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
             title="Nova Tarefa"
         >
             <Plus size={28} />

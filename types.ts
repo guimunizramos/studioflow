@@ -128,9 +128,7 @@ export interface Task {
 
 export interface VisualConfig {
   themeMode: 'light' | 'dark';
-  primaryColor: string;
   density: 'compact' | 'comfortable';
-  sidebarColor: string;
 }
 
 export interface AppConfig {

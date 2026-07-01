@@ -103,9 +103,7 @@ export function createEmptySchema(): Omit<DatabaseSchema, 'metadata'> {
       breaks: [],
       visual: {
         themeMode: 'light',
-        primaryColor: '#2563eb',
-        density: 'comfortable',
-        sidebarColor: '#111827'
+        density: 'comfortable'
       }
     }
   };
