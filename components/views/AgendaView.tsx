@@ -2,12 +2,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useData } from '../../services/dataContext';
 import { Task, AgendaViewMode, TaskStatus, Priority } from '../../types';
+import { WEEKDAY_LABELS_SUN_FIRST } from '../../constants';
 import { ChevronLeft, ChevronRight, Wand2, Calendar as CalendarIcon, Clock, CheckCircle2, GripHorizontal, AlertCircle } from 'lucide-react';
 
 // --- Constants ---
-const START_HOUR = 8;
-const END_HOUR = 20;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 const CELL_HEIGHT = 100; // Pixels per hour
 
 // --- Helper Components ---
@@ -83,10 +81,24 @@ const AgendaTaskCard: React.FC<{
 // --- Main Component ---
 
 const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskClick }) => {
-  const { tasks, clients, updateTask, updateTaskStatus, autoScheduleDay } = useData();
+  const { tasks, clients, updateTask, updateTaskStatus, autoScheduleDay, config } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<AgendaViewMode>(AgendaViewMode.WEEK);
   const [resizingTask, setResizingTask] = useState<{ id: string, startY: number, startDuration: number } | null>(null);
+  const [scheduleResult, setScheduleResult] = useState<string | null>(null);
+
+  const START_HOUR = parseInt(config.workWindowStart.split(':')[0]);
+  const END_HOUR = parseInt(config.workWindowEnd.split(':')[0]);
+  const HOURS = useMemo(
+    () => Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR),
+    [START_HOUR, END_HOUR]
+  );
+
+  const isHourBlocked = (hour: number) => (config.breaks || []).some(b => {
+    const bStart = parseInt(b.start.split(':')[0]);
+    const bEnd = parseInt(b.end.split(':')[0]);
+    return hour >= bStart && hour < bEnd;
+  });
 
   // --- Helpers ---
 
@@ -364,16 +376,39 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
 
                                 {/* Hourly Grid */}
                                 <div className="relative flex-1">
+                                     {/* Janelas preferenciais por cliente (fundo, atrás das linhas da grade) */}
+                                     {clients.flatMap(c => (c.workBlocks || [])
+                                        .filter(wb => wb.day === WEEKDAY_LABELS_SUN_FIRST[date.getDay()])
+                                        .map((wb, i) => {
+                                            const wbStart = Math.max(START_HOUR, parseInt(wb.start.split(':')[0]));
+                                            const wbEnd = Math.min(END_HOUR + 1, parseInt(wb.end.split(':')[0]));
+                                            if (wbEnd <= wbStart) return null;
+                                            const top = (wbStart - START_HOUR) * CELL_HEIGHT;
+                                            const height = (wbEnd - wbStart) * CELL_HEIGHT;
+                                            return (
+                                                <div
+                                                    key={`${c.id}-${i}`}
+                                                    className="absolute left-0 right-0 pointer-events-none z-0"
+                                                    style={{ top: `${top}px`, height: `${height}px`, backgroundColor: `${c.color}15` }}
+                                                    title={`${c.name}: janela preferencial`}
+                                                />
+                                            );
+                                        })
+                                     )}
+
                                      {/* Grid Lines Background */}
-                                     {HOURS.map(h => (
-                                         <div 
-                                            key={h} 
-                                            onDragOver={(e) => e.preventDefault()}
-                                            onDrop={(e) => handleDrop(e, date, h)}
-                                            className="border-b border-gray-100 box-border transition-colors hover:bg-blue-50/30"
-                                            style={{ height: `${CELL_HEIGHT}px` }}
-                                         />
-                                     ))}
+                                     {HOURS.map(h => {
+                                         const blocked = isHourBlocked(h);
+                                         return (
+                                             <div
+                                                key={h}
+                                                onDragOver={(e) => { if (!blocked) e.preventDefault(); }}
+                                                onDrop={(e) => { if (!blocked) handleDrop(e, date, h); }}
+                                                className={`border-b border-gray-100 box-border transition-colors ${blocked ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-blue-50/30'}`}
+                                                style={{ height: `${CELL_HEIGHT}px` }}
+                                             />
+                                         );
+                                     })}
 
                                      {/* Scheduled Tasks (Absolute Positioning) */}
                                      {dayTasks.filter(t => t.startTime).map(task => {
@@ -418,6 +453,12 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
     );
   };
 
+  const handleAutoSchedule = () => {
+    const result = autoScheduleDay(getLocalISODate(new Date()));
+    setScheduleResult(result.message);
+    setTimeout(() => setScheduleResult(null), 3000);
+  };
+
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Toolbar */}
@@ -431,8 +472,13 @@ const AgendaView: React.FC<{ onTaskClick?: (task: Task) => void }> = ({ onTaskCl
         </div>
 
         <div className="flex items-center gap-3">
+           {scheduleResult && (
+             <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-green-50 text-green-700">
+               {scheduleResult}
+             </span>
+           )}
            <button
-             onClick={() => autoScheduleDay(getLocalISODate(new Date()))}
+             onClick={handleAutoSchedule}
              className="flex items-center gap-2 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium transition-colors"
            >
              <Wand2 size={16} />

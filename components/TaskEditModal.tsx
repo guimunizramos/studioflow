@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../services/dataContext';
 import { Task, Priority, TaskStatus, TaskType } from '../types';
 import { X, Trash2, Save } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 interface TaskEditModalProps {
   task: Task;
@@ -12,6 +13,7 @@ interface TaskEditModalProps {
 const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose }) => {
   const { updateTask, addTask, deleteTask, clients, projects, config, tasks } = useData();
   const [editedTask, setEditedTask] = useState<Task>({ ...task });
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Reset state when task prop changes
   useEffect(() => {
@@ -30,10 +32,12 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose }) => {
   };
 
   const handleDelete = () => {
-    if(confirm('Tem certeza que deseja excluir esta tarefa?')) {
-        deleteTask(task.id);
-        onClose();
-    }
+    setConfirmingDelete(true);
+  };
+
+  const confirmDelete = () => {
+    deleteTask(task.id);
+    onClose();
   };
 
   return (
@@ -209,6 +213,14 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose }) => {
             </div>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          message="Tem certeza que deseja excluir esta tarefa?"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </div>
   );
 };

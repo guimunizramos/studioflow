@@ -1,8 +1,13 @@
 
-import { 
-  Client, ClientCategory, Priority, Project, ProjectStatus, ProjectType, 
+import {
+  Client, ClientCategory, ContractType, Priority, Project, ProjectStatus, ProjectType,
   Task, TaskStatus, TaskType
 } from './types';
+
+// Dias da semana indexados por Date.getDay() (0 = Domingo). Usado por
+// unavailableDays, Client.workBlocks e o auto-scheduler. NÃO confundir com
+// os rótulos da visão mensal da Agenda, que começam na segunda-feira.
+export const WEEKDAY_LABELS_SUN_FIRST = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 // Helper to get local YYYY-MM-DD
 const toLocalISOString = (date: Date) => {
@@ -21,6 +26,8 @@ export const SEED_CLIENTS: Client[] = [
     minDailyHours: 1,
     priority: Priority.HIGH,
     observations: 'Foco em lançamentos trimestrais.',
+    contractType: ContractType.RETAINER,
+    workBlocks: [],
   },
   {
     id: 'c2',
@@ -32,6 +39,8 @@ export const SEED_CLIENTS: Client[] = [
     minDailyHours: 0.5,
     priority: Priority.MEDIUM,
     observations: 'Postagens institucionais.',
+    contractType: ContractType.RETAINER,
+    workBlocks: [],
   },
   {
     id: 'c3',
@@ -43,6 +52,8 @@ export const SEED_CLIENTS: Client[] = [
     minDailyHours: 1,
     priority: Priority.HIGH,
     observations: 'Conteúdo técnico de saúde.',
+    contractType: ContractType.RETAINER,
+    workBlocks: [],
   },
   {
     id: 'c4',
@@ -54,6 +65,8 @@ export const SEED_CLIENTS: Client[] = [
     minDailyHours: 0,
     priority: Priority.LOW,
     observations: 'Portfólio visual.',
+    contractType: ContractType.ONE_OFF,
+    workBlocks: [],
   }
 ];
 

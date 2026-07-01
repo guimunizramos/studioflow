@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
 import { useData } from '../../services/dataContext';
-import { Save, Calculator, AlertTriangle } from 'lucide-react';
+import { Save, Calculator, AlertTriangle, CheckCircle2, Trash2, Plus } from 'lucide-react';
+import { Break } from '../../types';
+import { WEEKDAY_LABELS_SUN_FIRST } from '../../constants';
 
 const SettingsView: React.FC = () => {
   const { config, updateConfig, clients, updateClient } = useData();
@@ -9,11 +11,39 @@ const SettingsView: React.FC = () => {
       totalHoursPerDay: config.totalHoursPerDay,
       workWindowStart: config.workWindowStart,
       workWindowEnd: config.workWindowEnd,
+      agencyName: config.agencyName,
+      userName: config.userName,
+      notes: config.notes,
+      unavailableDays: config.unavailableDays,
+      breaks: config.breaks,
   });
+  const [saveConfirmation, setSaveConfirmation] = useState(false);
+  const [newBreak, setNewBreak] = useState<Omit<Break, 'id'>>({ name: 'Almoço', start: '12:00', end: '13:00' });
 
   const handleSave = () => {
     updateConfig(localConfig);
-    alert('Configurações salvas!');
+    setSaveConfirmation(true);
+    setTimeout(() => setSaveConfirmation(false), 3000);
+  };
+
+  const toggleUnavailableDay = (day: string) => {
+    setLocalConfig(prev => ({
+        ...prev,
+        unavailableDays: prev.unavailableDays.includes(day)
+            ? prev.unavailableDays.filter(d => d !== day)
+            : [...prev.unavailableDays, day]
+    }));
+  };
+
+  const addBreak = () => {
+    setLocalConfig(prev => ({
+        ...prev,
+        breaks: [...prev.breaks, { ...newBreak, id: `b-${Date.now()}` }]
+    }));
+  };
+
+  const removeBreak = (id: string) => {
+    setLocalConfig(prev => ({ ...prev, breaks: prev.breaks.filter(b => b.id !== id) }));
   };
 
   const handleClientHoursChange = (id: string, value: string, type: 'weekly' | 'daily') => {
@@ -77,14 +107,66 @@ const SettingsView: React.FC = () => {
                                 />
                             </div>
                         </div>
-                        <button 
-                            onClick={handleSave} 
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Dias Indisponíveis</label>
+                            <div className="flex flex-wrap gap-2">
+                                {WEEKDAY_LABELS_SUN_FIRST.map(day => {
+                                    const active = localConfig.unavailableDays.includes(day);
+                                    return (
+                                        <button
+                                            key={day}
+                                            type="button"
+                                            onClick={() => toggleUnavailableDay(day)}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                                                active ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {day}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleSave}
                             className="w-full mt-4 px-4 py-2 text-white rounded-lg hover:opacity-90 flex items-center justify-center space-x-2"
                             style={{ backgroundColor: config.visual.primaryColor }}
                         >
                             <Save size={18} />
                             <span>Salvar Config</span>
                         </button>
+                        {saveConfirmation && (
+                            <div className="flex items-start space-x-2 p-3 bg-green-50 text-green-700 rounded-lg text-xs">
+                                <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+                                <p>Configurações salvas com sucesso.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Identidade */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Identidade</h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Agência</label>
+                            <input
+                                type="text"
+                                value={localConfig.agencyName}
+                                onChange={e => setLocalConfig({...localConfig, agencyName: e.target.value})}
+                                className="w-full border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Seu Nome</label>
+                            <input
+                                type="text"
+                                value={localConfig.userName}
+                                onChange={e => setLocalConfig({...localConfig, userName: e.target.value})}
+                                placeholder="Ex: Gui Muniz"
+                                className="w-full border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -122,8 +204,8 @@ const SettingsView: React.FC = () => {
             </div>
 
             {/* Distribuição por Cliente */}
-            <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full">
+            <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribuição de Horas por Cliente</h3>
                     <p className="text-sm text-gray-500 mb-6">Defina o contrato semanal ou a meta diária. O cálculo é feito automaticamente considerando 5 dias úteis.</p>
 
@@ -164,6 +246,66 @@ const SettingsView: React.FC = () => {
                             </div>
                         ))}
                     </div>
+                </div>
+
+                {/* Intervalos Bloqueados */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Intervalos Bloqueados</h3>
+                    <div className="space-y-2 mb-3">
+                        {localConfig.breaks.map(b => (
+                            <div key={b.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border border-gray-200 text-sm">
+                                <span className="text-gray-700">{b.name}: {b.start} - {b.end}</span>
+                                <button
+                                    onClick={() => removeBreak(b.id)}
+                                    className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))}
+                        {localConfig.breaks.length === 0 && (
+                            <p className="text-xs text-gray-400 italic">Nenhum intervalo bloqueado.</p>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={newBreak.name}
+                            onChange={e => setNewBreak({...newBreak, name: e.target.value})}
+                            placeholder="Nome (ex: Almoço)"
+                            className="flex-1 border border-gray-300 bg-white text-gray-900 rounded-lg px-2 py-1.5 text-sm outline-none"
+                        />
+                        <input
+                            type="time"
+                            value={newBreak.start}
+                            onChange={e => setNewBreak({...newBreak, start: e.target.value})}
+                            className="border border-gray-300 bg-white text-gray-900 rounded-lg px-2 py-1.5 text-sm outline-none"
+                        />
+                        <input
+                            type="time"
+                            value={newBreak.end}
+                            onChange={e => setNewBreak({...newBreak, end: e.target.value})}
+                            className="border border-gray-300 bg-white text-gray-900 rounded-lg px-2 py-1.5 text-sm outline-none"
+                        />
+                        <button
+                            onClick={addBreak}
+                            className="px-3 py-1.5 text-white rounded-lg text-sm hover:opacity-90"
+                            style={{ backgroundColor: config.visual.primaryColor }}
+                        >
+                            <Plus size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Notas */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Notas</h3>
+                    <textarea
+                        value={localConfig.notes}
+                        onChange={e => setLocalConfig({...localConfig, notes: e.target.value})}
+                        placeholder="Anotações gerais..."
+                        className="w-full border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none h-40 resize-none"
+                    />
                 </div>
             </div>
         </div>

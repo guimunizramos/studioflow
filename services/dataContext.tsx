@@ -1,9 +1,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useMemo, useCallback } from 'react';
 import { Client, Project, Task, AppConfig, TaskStatus } from '../types';
-import { SEED_CLIENTS, SEED_PROJECTS, SEED_TASKS } from '../constants';
+import { SEED_CLIENTS, SEED_PROJECTS, SEED_TASKS, WEEKDAY_LABELS_SUN_FIRST } from '../constants';
 import { getStorageAdapter, DatabaseSchema } from './storage';
 import { createEmptySchema, updateChecksum } from './storage/storage-utils';
+
+interface AutoScheduleResult {
+  addedCount: number;
+  message: string;
+}
 
 interface DataContextType {
   clients: Client[];
@@ -16,8 +21,9 @@ interface DataContextType {
   deleteTask: (taskId: string) => void;
   addClient: (client: Client) => void;
   updateClient: (client: Client) => void;
+  deleteClient: (clientId: string) => void;
   updateConfig: (newConfig: Partial<AppConfig>) => void;
-  autoScheduleDay: (date: string) => void;
+  autoScheduleDay: (date: string) => AutoScheduleResult;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -34,6 +40,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     workWindowEnd: '18:00',
     notes: '',
     unavailableDays: [],
+    agencyName: 'StudioFlow',
+    userName: '',
+    breaks: [],
     visual: {
       themeMode: 'light',
       primaryColor: '#2563eb',
@@ -156,19 +165,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
   }, []);
 
+  const deleteClient = useCallback((clientId: string) => {
+    setClients(prev => prev.filter(c => c.id !== clientId));
+  }, []);
+
   const updateConfig = useCallback((newConfig: Partial<AppConfig>) => {
     setConfig(prev => ({ ...prev, ...newConfig }));
   }, []);
 
   // Algoritmo de Agendamento que atualiza diretamente as Tarefas
-  const autoScheduleDay = useCallback((dateStr: string) => {
+  const autoScheduleDay = useCallback((dateStr: string): AutoScheduleResult => {
     const globalStart = parseInt(config.workWindowStart.split(':')[0]);
     const globalEnd = parseInt(config.workWindowEnd.split(':')[0]);
-    
+
     // 1. Identificar horas já ocupadas no dia por outras tarefas
     // Considera tarefas que já tem startTime definido para este dia
     const occupiedHours = new Set<number>();
-    
+
     tasks.forEach(t => {
       if (t.deadline === dateStr && t.startTime) {
          const start = parseInt(t.startTime.split(':')[0]);
@@ -176,6 +189,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
          for(let i=0; i<duration; i++) occupiedHours.add(start + i);
       }
     });
+
+    // 1b. Marca intervalos bloqueados (ex: almoço) como ocupados
+    (config.breaks || []).forEach(b => {
+      const breakStart = parseInt(b.start.split(':')[0]);
+      const breakEnd = parseInt(b.end.split(':')[0]);
+      for (let h = breakStart; h < breakEnd; h++) occupiedHours.add(h);
+    });
+
+    const clientsById = new Map<string, Client>(clients.map(c => [c.id, c]));
+    const weekdayLabel = WEEKDAY_LABELS_SUN_FIRST[new Date(dateStr + 'T00:00:00').getDay()];
 
     // 2. Selecionar tarefas pendentes (que NÃO estão agendadas para hoje ou não tem hora)
     // Inclui tarefas atrasadas ou de dias futuros para trazer para hoje
@@ -204,21 +227,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (occupiedHours.size >= (globalEnd - globalStart)) break;
 
         const desiredDuration = Math.min(task.estimatedHours, 4); // Max 4h block per auto-schedule
-        
+
+        // Se o cliente da tarefa tem janelas de trabalho preferenciais para
+        // este dia da semana, restringe a busca a elas; senão usa a janela
+        // global (comportamento anterior, mantido para clientes sem blocos).
+        const client = clientsById.get(task.clientId);
+        const clientBlocksToday = (client?.workBlocks || []).filter(wb => wb.day === weekdayLabel);
+        const candidateRanges = clientBlocksToday.length > 0
+            ? clientBlocksToday.map(wb => ({
+                start: Math.max(globalStart, parseInt(wb.start.split(':')[0])),
+                end: Math.min(globalEnd, parseInt(wb.end.split(':')[0])),
+              }))
+            : [{ start: globalStart, end: globalEnd }];
+
         let slotFound = -1;
 
-        // Tenta encontrar slot
-        for (let hour = globalStart; hour <= (globalEnd - desiredDuration); hour++) {
-            let fits = true;
-            for (let d = 0; d < desiredDuration; d++) {
-                if (occupiedHours.has(hour + d)) {
-                    fits = false;
-                    break;
+        // Tenta encontrar slot dentro de alguma janela candidata
+        rangeSearch:
+        for (const range of candidateRanges) {
+            for (let hour = range.start; hour <= (range.end - desiredDuration); hour++) {
+                let fits = true;
+                for (let d = 0; d < desiredDuration; d++) {
+                    if (occupiedHours.has(hour + d)) {
+                        fits = false;
+                        break;
+                    }
                 }
-            }
-            if (fits) {
-                slotFound = hour;
-                break;
+                if (fits) {
+                    slotFound = hour;
+                    break rangeSearch;
+                }
             }
         }
 
@@ -245,16 +283,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const updated = tasksToUpdate.find(up => up.id === t.id);
             return updated || t;
         }));
-        alert(`${addedCount} tarefas foram organizadas para hoje!`);
-    } else {
-        alert('Agenda cheia ou sem tarefas pendentes adequadas para hoje.');
+        return { addedCount, message: `${addedCount} tarefas foram organizadas para hoje!` };
     }
-  }, [tasks, config]);
+    return { addedCount: 0, message: 'Agenda cheia ou sem tarefas pendentes adequadas para hoje.' };
+  }, [tasks, config, clients]);
 
   const value = useMemo(() => ({
     clients, projects, tasks, config,
-    updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, updateConfig, autoScheduleDay
-  }), [clients, projects, tasks, config, updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, updateConfig, autoScheduleDay]);
+    updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, deleteClient, updateConfig, autoScheduleDay
+  }), [clients, projects, tasks, config, updateTaskStatus, updateTask, addTask, deleteTask, addClient, updateClient, deleteClient, updateConfig, autoScheduleDay]);
 
   // Mostra loading durante carregamento inicial
   if (isLoading) {

@@ -98,6 +98,9 @@ export function createEmptySchema(): Omit<DatabaseSchema, 'metadata'> {
       workWindowEnd: '18:00',
       notes: '',
       unavailableDays: [],
+      agencyName: 'StudioFlow',
+      userName: '',
+      breaks: [],
       visual: {
         themeMode: 'light',
         primaryColor: '#2563eb',

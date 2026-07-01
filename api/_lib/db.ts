@@ -15,6 +15,8 @@ function rowToClient(r: any): Client {
     minDailyHours: Number(r.min_daily_hours),
     priority: r.priority,
     observations: r.observations,
+    contractType: r.contract_type,
+    workBlocks: r.work_blocks,
   };
 }
 
@@ -58,6 +60,9 @@ function rowToConfig(r: any): AppConfig {
     workWindowEnd: r.work_window_end,
     notes: r.notes,
     unavailableDays: r.unavailable_days,
+    agencyName: r.agency_name,
+    userName: r.user_name,
+    breaks: r.breaks,
     visual: r.visual,
   };
 }
@@ -101,8 +106,8 @@ export async function saveSchema(data: DatabaseSchema): Promise<void> {
 
   for (const c of clients) {
     inserts.push(sql`
-      INSERT INTO clients (id, name, brand, category, color, weekly_hours, min_daily_hours, priority, observations)
-      VALUES (${c.id}, ${c.name}, ${c.brand}, ${c.category}, ${c.color}, ${c.weeklyHours}, ${c.minDailyHours}, ${c.priority}, ${c.observations})
+      INSERT INTO clients (id, name, brand, category, color, weekly_hours, min_daily_hours, priority, observations, contract_type, work_blocks)
+      VALUES (${c.id}, ${c.name}, ${c.brand}, ${c.category}, ${c.color}, ${c.weeklyHours}, ${c.minDailyHours}, ${c.priority}, ${c.observations}, ${c.contractType}, ${JSON.stringify(c.workBlocks)})
     `);
   }
   for (const p of projects) {
@@ -118,15 +123,18 @@ export async function saveSchema(data: DatabaseSchema): Promise<void> {
     `);
   }
   inserts.push(sql`
-    INSERT INTO app_config (id, total_hours_per_day, work_window_start, work_window_end, notes, unavailable_days, visual)
-    VALUES (1, ${config.totalHoursPerDay}, ${config.workWindowStart}, ${config.workWindowEnd}, ${config.notes}, ${JSON.stringify(config.unavailableDays)}, ${JSON.stringify(config.visual)})
+    INSERT INTO app_config (id, total_hours_per_day, work_window_start, work_window_end, notes, unavailable_days, visual, agency_name, user_name, breaks)
+    VALUES (1, ${config.totalHoursPerDay}, ${config.workWindowStart}, ${config.workWindowEnd}, ${config.notes}, ${JSON.stringify(config.unavailableDays)}, ${JSON.stringify(config.visual)}, ${config.agencyName}, ${config.userName}, ${JSON.stringify(config.breaks)})
     ON CONFLICT (id) DO UPDATE SET
       total_hours_per_day = EXCLUDED.total_hours_per_day,
       work_window_start = EXCLUDED.work_window_start,
       work_window_end = EXCLUDED.work_window_end,
       notes = EXCLUDED.notes,
       unavailable_days = EXCLUDED.unavailable_days,
-      visual = EXCLUDED.visual
+      visual = EXCLUDED.visual,
+      agency_name = EXCLUDED.agency_name,
+      user_name = EXCLUDED.user_name,
+      breaks = EXCLUDED.breaks
   `);
 
   if (inserts.length > 0) {

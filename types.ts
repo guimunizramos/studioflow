@@ -64,7 +64,25 @@ export enum AgendaViewMode {
   MONTH = 'Mês',
 }
 
+export enum ContractType {
+  RETAINER = 'Recorrente',
+  ONE_OFF = 'Pontual',
+}
+
 // Interfaces
+export interface WorkBlock {
+  day: string; // one of WEEKDAY_LABELS_SUN_FIRST (constants.ts), e.g. 'Seg'
+  start: string; // HH:mm
+  end: string; // HH:mm
+}
+
+export interface Break {
+  id: string;
+  name: string;
+  start: string; // HH:mm
+  end: string; // HH:mm
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -75,6 +93,8 @@ export interface Client {
   minDailyHours: number;
   priority: Priority;
   observations: string;
+  contractType: ContractType;
+  workBlocks: WorkBlock[];
 }
 
 export interface Project {
@@ -119,5 +139,8 @@ export interface AppConfig {
   workWindowEnd: string; // 18:00
   notes: string;
   unavailableDays: string[];
+  agencyName: string;
+  userName: string;
+  breaks: Break[];
   visual: VisualConfig;
 }

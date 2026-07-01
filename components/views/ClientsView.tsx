@@ -1,13 +1,17 @@
 
 import React, { useState } from 'react';
 import { useData } from '../../services/dataContext';
-import { Client, ClientCategory, Priority } from '../../types';
-import { Plus, Save, Edit2 } from 'lucide-react';
+import { Client, ClientCategory, ContractType, Priority, WorkBlock } from '../../types';
+import { WEEKDAY_LABELS_SUN_FIRST } from '../../constants';
+import { Plus, Save, Edit2, Trash2 } from 'lucide-react';
+import ConfirmDialog from '../ConfirmDialog';
 
 const ClientsView: React.FC = () => {
-  const { clients, updateClient, addClient, config } = useData();
+  const { clients, updateClient, addClient, deleteClient, config } = useData();
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Client>>({});
+  const [newBlock, setNewBlock] = useState<WorkBlock>({ day: WEEKDAY_LABELS_SUN_FIRST[1], start: '09:00', end: '12:00' });
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
 
   const handleEdit = (client: Client) => {
     setIsEditing(client.id);
@@ -19,12 +23,14 @@ const ClientsView: React.FC = () => {
     setEditForm({
         name: '',
         brand: '', // Hidden, will copy name
-        category: ClientCategory.OTHER, // Default hidden
+        category: ClientCategory.OTHER,
         color: '#6b7280',
         weeklyHours: 0,
         minDailyHours: 0,
         priority: Priority.MEDIUM,
-        observations: ''
+        observations: '',
+        contractType: ContractType.RETAINER,
+        workBlocks: [],
     });
   };
 
@@ -110,8 +116,8 @@ const ClientsView: React.FC = () => {
                         <div className="flex space-x-4">
                             {Object.values(Priority).map((p) => (
                                 <label key={p} className="flex items-center space-x-2 cursor-pointer bg-gray-50 px-3 py-2 rounded border border-gray-200 hover:bg-gray-100">
-                                    <input 
-                                        type="radio" 
+                                    <input
+                                        type="radio"
                                         name="priority"
                                         checked={editForm.priority === p}
                                         onChange={() => setEditForm({...editForm, priority: p as Priority})}
@@ -120,6 +126,90 @@ const ClientsView: React.FC = () => {
                                     <span className="text-sm text-gray-700">{p}</span>
                                 </label>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* 4b. Categoria */}
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                        <div className="flex flex-wrap gap-2">
+                            {Object.values(ClientCategory).map((cat) => (
+                                <label key={cat} className="flex items-center space-x-2 cursor-pointer bg-gray-50 px-3 py-2 rounded border border-gray-200 hover:bg-gray-100">
+                                    <input
+                                        type="radio"
+                                        name="category"
+                                        checked={editForm.category === cat}
+                                        onChange={() => setEditForm({...editForm, category: cat as ClientCategory})}
+                                        className="text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-700">{cat}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 4c. Tipo de Contrato */}
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
+                        <div className="flex space-x-4">
+                            {Object.values(ContractType).map((ct) => (
+                                <label key={ct} className="flex items-center space-x-2 cursor-pointer bg-gray-50 px-3 py-2 rounded border border-gray-200 hover:bg-gray-100">
+                                    <input
+                                        type="radio"
+                                        name="contractType"
+                                        checked={editForm.contractType === ct}
+                                        onChange={() => setEditForm({...editForm, contractType: ct as ContractType})}
+                                        className="text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-700">{ct}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 4d. Janelas de Trabalho Preferenciais */}
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Janelas de Trabalho Preferenciais</label>
+                        <div className="space-y-2 mb-3">
+                            {(editForm.workBlocks || []).map((wb, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border border-gray-200 text-sm">
+                                    <span className="text-gray-700">{wb.day}: {wb.start} - {wb.end}</span>
+                                    <button
+                                        onClick={() => setEditForm({...editForm, workBlocks: editForm.workBlocks!.filter((_, i) => i !== idx)})}
+                                        className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={newBlock.day}
+                                onChange={e => setNewBlock({...newBlock, day: e.target.value})}
+                                className="border border-gray-300 bg-white text-gray-900 rounded-lg px-2 py-1.5 text-sm outline-none"
+                            >
+                                {WEEKDAY_LABELS_SUN_FIRST.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                            <input
+                                type="time"
+                                value={newBlock.start}
+                                onChange={e => setNewBlock({...newBlock, start: e.target.value})}
+                                className="border border-gray-300 bg-white text-gray-900 rounded-lg px-2 py-1.5 text-sm outline-none"
+                            />
+                            <input
+                                type="time"
+                                value={newBlock.end}
+                                onChange={e => setNewBlock({...newBlock, end: e.target.value})}
+                                className="border border-gray-300 bg-white text-gray-900 rounded-lg px-2 py-1.5 text-sm outline-none"
+                            />
+                            <button
+                                onClick={() => setEditForm({...editForm, workBlocks: [...(editForm.workBlocks || []), newBlock]})}
+                                className="px-3 py-1.5 text-white rounded-lg text-sm hover:opacity-90"
+                                style={{ backgroundColor: config.visual.primaryColor }}
+                            >
+                                <Plus size={16} />
+                            </button>
                         </div>
                     </div>
 
@@ -158,15 +248,24 @@ const ClientsView: React.FC = () => {
                             <h3 className="font-bold text-lg text-gray-900 leading-tight">{client.name}</h3>
                             <p className="text-xs text-gray-400 mt-0.5">ID: {client.id}</p>
                         </div>
-                        <button onClick={() => handleEdit(client)} className="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors">
-                            <Edit2 size={18} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => handleEdit(client)} className="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors">
+                                <Edit2 size={18} />
+                            </button>
+                            <button onClick={() => setDeletingClientId(client.id)} className="text-gray-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors">
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
                     </div>
-                    
+
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span className="text-gray-500">Categoria:</span>
+                            <span className="font-medium text-gray-700">{client.category}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-b border-gray-50 pb-2">
                             <span className="text-gray-500">Contrato:</span>
-                            <span className="font-bold text-gray-700">{client.weeklyHours}h <span className="text-xs font-normal text-gray-400">/ semana</span></span>
+                            <span className="font-bold text-gray-700">{client.weeklyHours}h <span className="text-xs font-normal text-gray-400">/ semana ({client.contractType})</span></span>
                         </div>
                         <div className="flex justify-between items-center border-b border-gray-50 pb-2">
                             <span className="text-gray-500">Prioridade:</span>
@@ -192,6 +291,14 @@ const ClientsView: React.FC = () => {
             ))}
         </div>
       </div>
+
+      {deletingClientId && (
+        <ConfirmDialog
+          message="Tem certeza que deseja excluir este cliente? Tarefas e projetos vinculados não serão excluídos automaticamente."
+          onConfirm={() => { deleteClient(deletingClientId); setDeletingClientId(null); }}
+          onCancel={() => setDeletingClientId(null)}
+        />
+      )}
     </div>
   );
 };
