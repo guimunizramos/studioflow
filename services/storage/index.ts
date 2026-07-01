@@ -1,14 +1,15 @@
 import { StorageAdapter, StorageConfig } from './types';
 import { BrowserStorage } from './browser-storage';
+import { NeonStorage } from './neon-storage';
 
 /**
  * Detecta o ambiente e retorna o adaptador apropriado
  */
 export async function createStorageAdapter(config?: StorageConfig): Promise<StorageAdapter> {
   // Detecta se está rodando no browser ou Node.js
-  if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
-    // Browser - usa IndexedDB
-    return new BrowserStorage(config);
+  if (typeof window !== 'undefined') {
+    // Browser - usa a API serverless (Postgres/Neon)
+    return new NeonStorage(config);
   } else if (typeof process !== 'undefined' && process.versions?.node) {
     // Node.js - usa arquivos JSON (importação dinâmica para evitar problemas no browser)
     try {
@@ -26,11 +27,11 @@ export async function createStorageAdapter(config?: StorageConfig): Promise<Stor
 }
 
 /**
- * Versão síncrona que retorna BrowserStorage no browser (mais comum)
+ * Versão síncrona que retorna NeonStorage no browser (mais comum)
  */
 export function createStorageAdapterSync(config?: StorageConfig): StorageAdapter {
-  if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
-    return new BrowserStorage(config);
+  if (typeof window !== 'undefined') {
+    return new NeonStorage(config);
   }
   // Para Node.js, use createStorageAdapter() assíncrono
   throw new Error('Para Node.js, use createStorageAdapter() assíncrono');
@@ -49,8 +50,8 @@ let storagePromise: Promise<StorageAdapter> | null = null;
 export function getStorageAdapter(config?: StorageConfig): StorageAdapter {
   if (!storageInstance) {
     // No browser, cria síncrono
-    if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
-      storageInstance = new BrowserStorage(config);
+    if (typeof window !== 'undefined') {
+      storageInstance = new NeonStorage(config);
     } else {
       // No Node.js, precisa ser assíncrono, mas para compatibilidade
       // retornamos uma instância que será inicializada na primeira chamada
@@ -79,5 +80,6 @@ export async function getStorageAdapterAsync(config?: StorageConfig): Promise<St
 // Exporta tipos e classes
 export * from './types';
 export { BrowserStorage } from './browser-storage';
+export { NeonStorage } from './neon-storage';
 // NodeStorage exportado condicionalmente (apenas Node.js)
 export * from './storage-utils';
